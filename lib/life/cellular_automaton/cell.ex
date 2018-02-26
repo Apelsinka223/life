@@ -44,7 +44,7 @@ defmodule Life.CellularAutomaton.Cell do
   end
 
   def alive?({_, %Cell{}} = item, field) do
-    (item |> get_alive_neighbours(field) |> Enum.count())  in [2, 3]
+    (item |> get_alive_neighbours(field) |> Enum.count()) in [2, 3]
   end
 
   def alive?(item, field) do

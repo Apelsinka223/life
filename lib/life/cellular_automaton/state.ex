@@ -26,6 +26,10 @@ defmodule Life.CellularAutomaton.State do
     GenServer.cast(pid, {:add, item})
   end
 
+  def reset(pid) do
+    GenServer.cast(pid, :reset)
+  end
+
   def handle_cast({:add, {coords, %Cell{} = cell}}, next_state) do
     next_state =
       if is_nil(next_state[coords]) do
@@ -34,6 +38,10 @@ defmodule Life.CellularAutomaton.State do
         next_state
       end
     {:noreply, next_state}
+  end
+
+  def handle_cast(:reset, _) do
+    {:noreply, %{}}
   end
 
   def handle_call(:get_state, _from,  next_state) do

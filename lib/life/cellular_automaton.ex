@@ -33,6 +33,7 @@ defmodule Life.CellularAutomaton do
 
     if state_changed?(current_state, next_state) do
       Process.sleep(timeout)
+      State.reset(pid)
       do_process(pid, next_state, timeout)
     else
       State.stop(pid)
