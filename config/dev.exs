@@ -34,8 +34,7 @@ config :life, LifeWeb.Endpoint,
 config :life, LifeWeb.Endpoint,
   live_reload: [
     patterns: [
-      ~r{priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$},
-      ~r{priv/gettext/.*(po)$},
+      ~r{static/.*(js|css|png|jpeg|jpg|gif|svg)$},
       ~r{lib/life_web/views/.*(ex)$},
       ~r{lib/life_web/templates/.*(eex)$}
     ]

@@ -1,44 +1,65 @@
 defmodule Life.CellularAutomaton do
-  use GenServer
+  @moduledoc false
 
-  alias Life.Cell
+  require Logger
 
-  def start_link() do
-    GenServer.start_link(__MODULE__, [], name: NextState)
+  defmodule CellularAutomatonError do
+    defexception [:message]
   end
 
-  def reset do
-    GenServer.cast(NextState, :reset_state)
+  alias Life.CellularAutomaton.{State, Cell}
+
+  def process(first_generation, timeout \\ 1000) do
+    {:ok, pid} = State.start_link([])
+    current_state = Cell.to_state(first_generation)
+    spawn(fn -> do_process(pid, current_state, timeout) end)
+    {:ok, pid}
   end
 
-  def get_state do
-    GenServer.call(NextState, :get_state)
+  def stop(pid), do: State.stop(pid)
+
+  defp do_process(pid, current_state, timeout) do
+    current_state
+    |> Task.async_stream(fn(item) ->
+      process_cell_with_neighbours(pid, item, current_state)
+    end)
+    |> Enum.each(fn
+      {:ok, _} -> :ok
+      {:error, reason} -> raise CellularAutomatonError, reason
+    end)
+
+    next_state = State.get_state(pid)
+    Logger.info(inspect(next_state))
+
+    if state_changed?(current_state, next_state) do
+      Process.sleep(timeout)
+      do_process(pid, next_state, timeout)
+    else
+      State.stop(pid)
+    end
   end
 
-  def init(state) do
-    {:ok, state}
+  defp process_cell_with_neighbours(pid, item, current_state) do
+    item
+    |> Cell.get_all_neighbours(current_state)
+    |> List.insert_at(-1, item)
+    |> Enum.each(&process_cell(pid, &1, current_state))
   end
 
-  def add(item) do
-    GenServer.cast(NextState, {:add, item})
+  defp process_cell(pid, {coords, %Cell{age: age} = cell} = item, field) do
+    if Cell.alive?(item, field) do
+      State.add(pid, {coords, %{cell | age: age + 1}})
+    end
   end
 
-  def handle_cast(:reset_state, _) do
-    {:noreply, []}
+  defp process_cell(pid, {coords, nil} = item, field) do
+    if Cell.alive?(item, field) do
+      State.add(pid, {coords, %Cell{age: 0}})
+    end
   end
 
-  def handle_cast({:add, {coords, %Cell{}} = item}, next_state) do
-    next_state =
-      if not List.keymember?(next_state, coords, 0) do
-        [item | next_state]
-      else
-        next_state
-      end
-
-    {:noreply, next_state}
-  end
-
-  def handle_call(:get_state, _from,  next_state) do
-    {:reply, next_state, next_state}
+  defp state_changed?(current_state, next_state) do
+    ((Map.keys(current_state) -- Map.keys(next_state)) ++
+      (Map.keys(next_state) -- Map.keys(current_state))) != []
   end
 end

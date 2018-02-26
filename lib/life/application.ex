@@ -12,6 +12,8 @@ defmodule Life.Application do
 #      supervisor(Life.Repo, []),
       # Start the endpoint when the application starts
       supervisor(LifeWeb.Endpoint, []),
+      supervisor(Life.CellularAutomaton.Supervisor, []),
+      supervisor(Task.Supervisor, [[name: Life.TaskSupervisor]])
       # Start your own worker by calling: Life.Worker.start_link(arg1, arg2, arg3)
       # worker(Life.Worker, [arg1, arg2, arg3]),
     ]
